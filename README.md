@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Inside the Database
 
-## Getting Started
+An interactive learning studio that shows how a relational database answers a query: the client sends SQL, the parser builds a tree, the planner picks a plan, the executor walks a B-tree index, the buffer pool is checked, and a cache miss reads the page from disk.
 
-First, run the development server:
+It has two halves:
+
+- **Query flow** (Learn, lesson 1.1) is a deterministic, animated, simplified model of that journey for a SELECT, INSERT, UPDATE or DELETE on a `users` table: index lookups, the buffer pool, disk reads, new row versions (MVCC), dirty pages, WAL records and the commit flush, including a duplicate-key failure.
+- Everything else runs **real PostgreSQL 18 inside the browser tab** via [PGlite](https://pglite.dev) (Postgres compiled to WebAssembly). Nothing is sent to a server.
+
+| Page | What it does |
+| --- | --- |
+| Learn | Query flow animation, plus six hands-on labs: Composite indexes, Tuple layout (`pageinspect`), ACID, MVCC (row versions + snapshot explorer), Write-ahead logging (`pg_walinspect`) and Crash recovery (a real crash and WAL replay) |
+| Practice | SQL Lab: an editor over a sample shop database, 50+ runnable examples (joins, CTEs, window functions, MERGE, views, materialized views, functions, procedures with COMMIT, all trigger kinds, event triggers, transactions and savepoints, indexes, partitioning, JSONB, full-text search, LISTEN/NOTIFY, row-level security, cursors, prepared statements) and a live schema browser |
+| Visualize | Runs `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` and draws the real plan tree, with per-node timing and explanations |
+| Challenges | 12 exercises, checked by running your SQL and a reference solution on two fresh databases |
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run lint
+npm run typecheck
+npm test         # runs every example, lab step and challenge against real PostgreSQL (Node)
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Using it
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **Run query** plays the whole sequence automatically. Pause/Resume and Replay are in the progress strip; the numbered steps jump to a step and pause there.
+- **users_pkey index** switches between an index lookup and a sequential scan.
+- **Cold: miss / Warm: hit** replays with the page missing from, or already in, the buffer pool.
+- Select any part of the scene (or its caption) to explain it in the inspector: *Overview*, *This run* and *Steps* (the whole run as text).
+- **3D / 2D** switches views. Small screens default to 2D; without WebGL the 2D diagram is used automatically.
+- Settings: playback speed and reduced motion (the OS `prefers-reduced-motion` setting is also respected).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Supported SQL
 
-## Learn More
+```
+SELECT * | col[, col...] FROM users WHERE id = <integer>
+INSERT INTO users (name, email[, id, created_at]) VALUES (...)
+UPDATE users SET name | email | created_at = '...'[, ...] WHERE id = <integer>
+DELETE FROM users WHERE id = <integer>
+```
 
-To learn more about Next.js, take a look at the following resources:
+Columns: `id, name, email, created_at`. The `users` table holds ids 1-56 (14 rows per 8 KB page, pages 15-18); other ids return an empty result. Anything else gets an inline explanation.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Path | Responsibility |
+| --- | --- |
+| `src/lib/db/` | PGlite engine loading, seeded snapshots, the statement splitter/runner, catalog queries, the crash helper and the challenge checker. |
+| `src/content/examples/`, `src/content/labs/`, `src/content/challenges.ts` | The SQL Lab examples, lab lessons and challenges (all covered by `npm test`). |
+| `src/lib/plan/` + `src/components/plan/` | EXPLAIN JSON parsing and the plan tree. |
+| `src/lib/sim/` | The Query flow simulation: mock data, the SQL subset parser, the step builder and the derived scene state. No rendering code. |
+| `src/content/` | Concept definitions, lessons and the inspector's per-run facts. |
+| `src/hooks/usePlayback.ts` | Automatic timing, pause/resume, replay and seek. |
+| `src/hooks/useWorkspace.ts` | Workspace state: lesson, query, options, selection, settings. |
+| `src/components/scene/` | React Three Fiber scene (client-only, loaded with `ssr: false`). Labels are DOM elements in an overlay, positioned each frame by a projector without React re-renders. |
+| `src/components/diagram/` | 2D diagram: fallback and small-screen view. |
+| `src/components/{stage,inspector,playback,editor,lessons,topbar}/` | The workspace panels. |
 
-## Deploy on Vercel
+## Limitations
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Parsing, Planning, Execution, B-tree lookups, Index vs. table scan and Pages are focused views of the Query flow scene, not separate lessons.
+- The in-browser database is a single session, so concurrency (two transactions at once) is explained with the MVCC snapshot explorer rather than shown live. It also can't crash mid-transaction; the Crash recovery lab crashes between transactions.
+- PostgreSQL is the only engine; the selector lists others as not available.
+- The Query flow animation leaves out locks, the OS page cache, statistics, index pages living in the buffer pool, and eviction.
+- The database lives in memory: changes last until you reset or reload the page. The first page load downloads PGlite (a few MB).

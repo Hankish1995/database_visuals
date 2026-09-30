@@ -1,0 +1,21 @@
+// Scene colours, matched to the CSS theme tokens.
+export const PALETTE = {
+  flow: "#06b6d4",
+  flowDeep: "#0e7490",
+  accent: "#2563eb",
+  stage: { client: "#f8fafc", parser: "#7aa2f7", planner: "#4f86f7", executor: "#2f6fed" },
+  indexIdle: "#d8ccff",
+  indexLit: "#7c3aed",
+  indexOff: "#e2e8f0",
+  pageIdle: "#ffffff",
+  pageUsers: "#e6f6fb",
+  pageDirty: "#fde9c9",
+  walPending: "#f8fafc",
+  walFlushed: "#9fdcea",
+  walFailed: "#fbd5dd",
+  platformMemory: "#e8f4fb",
+  platformDisk: "#e7ecf3",
+  line: "#c3cedd",
+  lineDone: "#7dd3e3",
+  selected: "#2563eb",
+} as const;
