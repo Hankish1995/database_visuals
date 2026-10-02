@@ -1,6 +1,7 @@
 "use client";
 
-import { CONCEPTS } from "@/content/concepts";
+import { useContent } from "@/content/localized";
+import { useMessages } from "@/i18n";
 import { BTREE, INDEX } from "@/lib/sim/data";
 import { BTREE_SIZE } from "@/components/scene/BTree3D";
 import { Anchored, type AnchorRegistry } from "@/components/scene/labels/anchors";
@@ -13,6 +14,8 @@ type Props = SceneViewProps & { registry: AnchorRegistry };
 
 /** Captions for the query stages and the B-tree index. */
 export function FlowLabels({ registry, sim, scene, selected, onSelect }: Props) {
+  const concepts = useContent().concepts;
+  const m = useMessages().scene;
   const enabled = sim.options.useIndex || sim.kind === "insert";
   const lit = new Set(scene.btreeLit);
   const leafId = scene.btreeLit.at(-1);
@@ -21,11 +24,11 @@ export function FlowLabels({ registry, sim, scene, selected, onSelect }: Props) 
     <>
       {STAGES.map((id) => (
         <Anchored key={id} registry={registry} id={`stage-${id}`} position={[STAGE_POS[id][0], 1.1, STAGE_LABEL_POS_Z]}>
-          <SceneTag title={CONCEPTS[id].name} subtitle={CONCEPTS[id].tagline} state={stageState(id, scene)} selected={selected === id} onSelect={() => onSelect(id)} />
+          <SceneTag title={concepts[id].name} subtitle={concepts[id].tagline} state={stageState(id, scene)} selected={selected === id} onSelect={() => onSelect(id)} />
         </Anchored>
       ))}
       <Anchored registry={registry} id="btree-tag" position={[-8.95, 0, -1.3]}>
-        <SceneTag tone="index" title="B-tree index" subtitle={sim.kind === "insert" ? "Updated on every insert" : enabled ? `${INDEX} (id)` : "Not used for lookups"} state={btreeState}
+        <SceneTag tone="index" title={m.btree} subtitle={sim.kind === "insert" ? m.btreeInsert : enabled ? `${INDEX} (id)` : m.btreeOff} state={btreeState}
           selected={selected === "btree"} onSelect={() => onSelect("btree")} />
       </Anchored>
       {BTREE.map((node) => (

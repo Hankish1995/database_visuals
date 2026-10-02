@@ -2,11 +2,12 @@
 
 import { TABLE } from "@/lib/sim/data";
 import { PageTile } from "@/components/scene/PageTile";
-import { PALETTE } from "@/components/scene/palette";
+import { usePalette } from "@/components/scene/palette";
 import { BUFFER_CENTER, BUFFER_SIZE, bufferSlotPos } from "@/components/scene/sceneLayout";
 import type { SceneViewProps } from "@/components/scene/types";
 
 export function BufferPool3D({ scene, onSelect, reduceMotion }: SceneViewProps) {
+  const PALETTE = usePalette();
   const [x, , z] = BUFFER_CENTER;
   const select = () => onSelect("bufferPool");
   return (

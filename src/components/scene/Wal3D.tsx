@@ -1,12 +1,13 @@
 "use client";
 
-import { PALETTE } from "@/components/scene/palette";
+import { usePalette } from "@/components/scene/palette";
 import { SceneBlock } from "@/components/scene/SceneBlock";
 import { WAL_CENTER, WAL_SIZE, walRecordPos } from "@/components/scene/sceneLayout";
 import type { SceneViewProps } from "@/components/scene/types";
 
 /** The write-ahead log: one block per record, pale until flushed at COMMIT. */
 export function Wal3D({ scene, onSelect, reduceMotion }: SceneViewProps) {
+  const PALETTE = usePalette();
   const [x, , z] = WAL_CENTER;
   const select = () => onSelect("wal");
   const last = scene.wal.length - 1;

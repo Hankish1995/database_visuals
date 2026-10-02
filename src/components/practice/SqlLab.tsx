@@ -11,12 +11,14 @@ import { ALL_EXAMPLES, type SqlExample } from "@/content/examples";
 import { useDatabase } from "@/hooks/useDatabase";
 import { useSqlRunner } from "@/hooks/useSqlRunner";
 import { SHOP_SEED } from "@/lib/db/seeds";
+import { useMessages } from "@/i18n";
 
 const SHOP = { key: "shop", sql: SHOP_SEED };
 const panel = "rounded-xl border border-line bg-surface shadow-card";
 
 // Practice: a real PostgreSQL playground with every example one click away.
 export function SqlLab({ initialSql }: { initialSql?: string }) {
+  const m = useMessages().practice;
   const db = useDatabase(SHOP);
   const runner = useSqlRunner(db);
   const [example, setExample] = useState<SqlExample | null>(initialSql ? null : ALL_EXAMPLES[0]);
@@ -32,22 +34,22 @@ export function SqlLab({ initialSql }: { initialSql?: string }) {
       <section aria-labelledby="lab-title" className={`${panel} flex min-h-0 flex-col gap-3 p-4 lg:col-start-2 lg:row-start-1`}>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div>
-            <h1 id="lab-title" className="text-lg font-extrabold tracking-wide text-ink uppercase">SQL Lab</h1>
-            <p className="text-sm text-muted">Write and run any SQL against a sample shop database.</p>
+            <h1 id="lab-title" className="text-lg font-extrabold tracking-wide text-ink uppercase">{m.title}</h1>
+            <p className="text-sm text-muted">{m.subtitle}</p>
           </div>
           <DbStatus status={db.status} error={db.error} />
         </div>
-        <SqlEditor id="lab-sql" label="SQL script" value={sql} onChange={(v) => { setSql(v); if (example && v !== example.sql) setExample(null); }} onRun={run} className="h-64 shrink-0 lg:h-[42%]" />
+        <SqlEditor id="lab-sql" label={m.script} value={sql} onChange={(v) => { setSql(v); if (example && v !== example.sql) setExample(null); }} onRun={run} className="h-64 shrink-0 lg:h-[42%]" />
         <RunToolbar onRun={run} running={runner.running} ready={db.status === "ready"} continueOnError={continueOnError} onContinueChange={setContinueOnError}
           onReset={() => { runner.clear(); db.reset(); }} sql={sql} />
         <div aria-live="polite" className="min-h-0 flex-1 overflow-y-auto">
-          {runner.results === null ? <p className="py-6 text-center text-sm text-muted">Results appear here. Each statement gets its own result.</p>
-            : runner.results.length === 0 ? <p className="py-6 text-center text-sm text-muted">Nothing to run: the editor has no statements.</p>
+          {runner.results === null ? <p className="py-6 text-center text-sm text-muted">{m.resultsEmpty}</p>
+            : runner.results.length === 0 ? <p className="py-6 text-center text-sm text-muted">{m.nothingToRun}</p>
             : <ResultsList results={runner.results} skipped={runner.skipped} />}
         </div>
       </section>
       <LibraryPanel className={`${panel} lg:col-start-1 lg:row-start-1`} db={db} current={example?.id ?? null} onPick={pick} onQuery={load} />
-      <aside aria-label="About this example" className={`${panel} p-5 lg:col-start-3 lg:row-start-1 lg:overflow-y-auto`}>
+      <aside aria-label={m.about} className={`${panel} p-5 lg:col-start-3 lg:row-start-1 lg:overflow-y-auto`}>
         <ExampleInfo example={example} />
       </aside>
     </div>

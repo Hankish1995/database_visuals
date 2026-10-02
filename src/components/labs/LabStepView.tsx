@@ -6,7 +6,9 @@ import { VersionsView } from "@/components/labs/views/VersionsView";
 import { WalRecords } from "@/components/labs/views/WalRecords";
 import { StatementResultCard } from "@/components/sql/StatementResultCard";
 import type { LabView } from "@/content/labs";
+import { DB_NOT_READY } from "@/hooks/useDatabase";
 import type { StepOutcome } from "@/hooks/useLab";
+import { useMessages } from "@/i18n";
 import { planFromRows } from "@/lib/plan/parsePlan";
 import type { StatementResult } from "@/lib/db/types";
 
@@ -15,7 +17,9 @@ const has = (r: StatementResult, col: string) => r.columns.some((c) => c.name ==
 // Picks out the results a special view draws (a plan, a page, versions, WAL
 // records) and shows every other statement as an ordinary result.
 export function LabStepView({ view, outcome }: { view: LabView; outcome: StepOutcome }) {
-  if (outcome.failure) return <p role="alert" className="text-sm text-miss">This step couldn&apos;t run: {outcome.failure}</p>;
+  const messages = useMessages();
+  const m = messages.labs;
+  if (outcome.failure) return <p role="alert" className="text-sm text-miss">{m.failed(outcome.failure === DB_NOT_READY ? messages.dbNotReady : outcome.failure)}</p>;
   if (view === "recovery" && outcome.recovery) return <RecoveryView report={outcome.recovery} />;
 
   const { results } = outcome;

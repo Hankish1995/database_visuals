@@ -1,22 +1,25 @@
 import { CircleCheck, Zap } from "lucide-react";
 import { WalRecords } from "@/components/labs/views/WalRecords";
+import { RichText } from "@/components/ui/RichText";
+import { useMessages } from "@/i18n";
 import type { RecoveryReport } from "@/lib/db/crash";
 
 export function RecoveryView({ report }: { report: RecoveryReport }) {
+  const m = useMessages().labs;
   return (
     <div className="space-y-3 text-sm">
       <ol className="grid gap-2 md:grid-cols-3">
         <li className="rounded-lg border border-miss-line bg-miss-soft p-3">
-          <p className="flex items-center gap-1.5 font-semibold text-miss"><Zap className="size-4" aria-hidden /> Crashed</p>
-          <p className="mt-1 text-xs text-ink-soft">Files copied mid-flight. Last checkpoint&apos;s redo point: <code className="font-mono">{report.redoBefore}</code>; log ended at <code className="font-mono">{report.logEndBefore}</code>.</p>
+          <p className="flex items-center gap-1.5 font-semibold text-miss"><Zap className="size-4" aria-hidden /> {m.crashed}</p>
+          <p className="mt-1 text-xs text-ink-soft"><RichText text={m.crashedBody(report.redoBefore, report.logEndBefore)} /></p>
         </li>
         <li className="rounded-lg border border-accent/30 bg-accent-soft p-3">
-          <p className="font-semibold text-accent">Replayed {report.replayed.length} WAL records</p>
-          <p className="mt-1 text-xs text-ink-soft">The new server found an unclean shutdown and redid every record from the redo point to the end of the log.</p>
+          <p className="font-semibold text-accent">{m.replayed(report.replayed.length)}</p>
+          <p className="mt-1 text-xs text-ink-soft">{m.replayedBody}</p>
         </li>
         <li className="rounded-lg border border-ok/30 bg-ok-soft p-3">
-          <p className="flex items-center gap-1.5 font-semibold text-ok"><CircleCheck className="size-4" aria-hidden /> Recovered</p>
-          <p className="mt-1 text-xs text-ink-soft">Recovery finished with a new checkpoint at <code className="font-mono">{report.checkpointAfter}</code>.</p>
+          <p className="flex items-center gap-1.5 font-semibold text-ok"><CircleCheck className="size-4" aria-hidden /> {m.recovered}</p>
+          <p className="mt-1 text-xs text-ink-soft"><RichText text={m.recoveredBody(report.checkpointAfter)} /></p>
         </li>
       </ol>
       {report.replayed.length > 0 && (

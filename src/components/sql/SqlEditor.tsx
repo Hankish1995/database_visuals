@@ -2,6 +2,7 @@
 
 import { useRef, type KeyboardEvent } from "react";
 import { highlightSql } from "@/components/editor/highlightSql";
+import { useMessages } from "@/i18n";
 
 interface Props {
   id: string;
@@ -18,6 +19,7 @@ const TEXT = "px-3 py-2.5 font-mono text-[13px] leading-6 whitespace-pre";
 // screen readers work normally) over a coloured copy of its text.
 // Ctrl/⌘ + Enter runs.
 export function SqlEditor({ id, label, value, onChange, onRun, className = "" }: Props) {
+  const runHelp = useMessages().sql.runHelp;
   const overlay = useRef<HTMLPreElement>(null);
   const gutter = useRef<HTMLDivElement>(null);
   const lines = value.split("\n").length;
@@ -45,7 +47,7 @@ export function SqlEditor({ id, label, value, onChange, onRun, className = "" }:
           }}
           className={`absolute inset-0 h-full w-full resize-none overflow-auto bg-transparent text-transparent caret-ink outline-none selection:bg-accent/25 ${TEXT}`} />
       </div>
-      <p id={`${id}-help`} className="sr-only">Press Control or Command plus Enter to run.</p>
+      <p id={`${id}-help`} className="sr-only">{runHelp}</p>
     </div>
   );
 }

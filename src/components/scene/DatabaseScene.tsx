@@ -11,6 +11,7 @@ import { AnchorRegistry, LabelProjector } from "@/components/scene/labels/anchor
 import { FlowLabels } from "@/components/scene/labels/FlowLabels";
 import { StorageLabels } from "@/components/scene/labels/StorageLabels";
 import { QueryMarker } from "@/components/scene/QueryMarker";
+import { usePalette } from "@/components/scene/palette";
 import { markerPath } from "@/components/scene/sceneLayout";
 import { Stages3D } from "@/components/scene/Stages3D";
 import { Wal3D } from "@/components/scene/Wal3D";
@@ -25,6 +26,7 @@ interface Props extends SceneViewProps {
 // Browser-only: loaded with next/dynamic and ssr: false. R3F disposes the
 // geometries and materials it created when this unmounts.
 export default function DatabaseScene({ cameraReset, onContextLost, ...view }: Props) {
+  const palette = usePalette();
   const { sim, scene } = view;
   const [registry] = useState(() => new AnchorRegistry());
   // R3F forces a context loss when the canvas unmounts (e.g. switching to 2D); only a loss while mounted is a failure.
@@ -51,10 +53,10 @@ export default function DatabaseScene({ cameraReset, onContextLost, ...view }: P
           }, { once: true });
         }}
       >
-        <color attach="background" args={["#f7f9fc"]} />
-        <ambientLight intensity={1.4} />
-        <directionalLight position={[6, 14, 8]} intensity={1.6} />
-        <hemisphereLight args={["#ffffff", "#dbe4f0", 0.6]} />
+        <color attach="background" args={[palette.background]} />
+        <ambientLight intensity={palette.ambient} />
+        <directionalLight position={[6, 14, 8]} intensity={palette.directional} />
+        <hemisphereLight args={[palette.hemiSky, palette.hemiGround, 0.6]} />
         <CameraRig resetSignal={cameraReset} />
         <Stages3D {...view} />
         <BTree3D {...view} />

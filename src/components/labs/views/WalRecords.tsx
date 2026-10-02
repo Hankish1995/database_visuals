@@ -1,4 +1,5 @@
 import { formatCell } from "@/lib/db/runScript";
+import { useMessages } from "@/i18n";
 import type { StatementResult } from "@/lib/db/types";
 
 const TONE: Record<string, string> = {
@@ -8,8 +9,9 @@ const TONE: Record<string, string> = {
 
 // WAL records as a timeline, oldest first. Full-page images are called out.
 export function WalRecords({ records }: { records: StatementResult }) {
+  const m = useMessages().labs;
   return (
-    <ol aria-label="WAL records" className="space-y-1">
+    <ol aria-label={m.walRecords} className="space-y-1">
       {records.rows.map((r, i) => {
         const rm = String(r.resource_manager);
         const fpi = Number(r.fpi_length ?? 0);
@@ -19,7 +21,7 @@ export function WalRecords({ records }: { records: StatementResult }) {
             <span className={`rounded border px-1.5 py-0.5 font-semibold ${TONE[rm] ?? "border-line bg-subtle text-ink-soft"}`}>{rm}</span>
             <span className="font-mono font-semibold text-ink">{String(r.record_type)}</span>
             {r.record_length !== undefined && <span className="text-muted">{String(r.record_length)} B</span>}
-            {fpi > 0 && <span className="rounded bg-miss-soft px-1.5 py-0.5 font-semibold text-miss">full-page image {fpi} B</span>}
+            {fpi > 0 && <span className="rounded bg-miss-soft px-1.5 py-0.5 font-semibold text-miss">{m.fpi(fpi)}</span>}
             {r.description ? <span className="min-w-0 basis-full truncate pl-26 font-mono text-[11px] text-muted" title={String(r.description)}>{String(r.description)}</span> : null}
           </li>
         );

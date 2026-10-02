@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { useMessages } from "@/i18n";
 
 export type TagState = "active" | "done" | null;
 
@@ -13,6 +14,7 @@ interface Props {
 
 /** The clickable caption under a scene object. State is spelled out, not only coloured. */
 export function SceneTag({ title, subtitle, state, selected, onSelect, tone = "flow" }: Props) {
+  const m = useMessages().scene;
   const toneText = tone === "index" ? "text-index" : "text-flow";
   return (
     <button
@@ -24,8 +26,8 @@ export function SceneTag({ title, subtitle, state, selected, onSelect, tone = "f
     >
       <span className="flex items-center justify-center gap-1.5 text-[13px] font-semibold text-ink">
         {title}
-        {state === "active" && <span className={`rounded bg-flow-soft px-1 text-[10px] font-bold uppercase ${toneText}`}>Now</span>}
-        {state === "done" && <Check className="size-3.5 text-ok" aria-label="done" />}
+        {state === "active" && <span className={`rounded bg-flow-soft px-1 text-[10px] font-bold uppercase ${toneText}`}>{m.now}</span>}
+        {state === "done" && <Check className="size-3.5 text-ok" aria-label={m.done} />}
       </span>
       {subtitle && <span className="block text-[11px] text-muted">{subtitle}</span>}
     </button>

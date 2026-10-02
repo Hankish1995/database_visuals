@@ -43,6 +43,12 @@ An interactive simulation of a pgvector HNSW index -- PostgreSQL has no vector i
 - The metrics -- vectors compared, recall@5 against the exact answer, work relative to a full scan -- are illustrative counts from a 48-vector demo, not benchmarks.
 - What the fixed dataset shows: Query A finds 1 of 5 at ef_search 5 and all 5 at 6; Query C needs 8; Query B misses one until 32.
 
+### Theme and language
+
+The header has two switches: **Light / Dark** and **English / हिन्दी**. On a first visit the theme follows the OS setting; an explicit choice is saved in `localStorage` (`itd.theme`, `itd.locale`) and applied by a small inline script before the first paint, so there's no flash of the wrong theme or language. Switching never resets the lesson, query, playback position, lab progress or HNSW settings: the same run is simply re-worded.
+
+In Hindi, all interface text, lesson content (definitions, lab steps, examples, challenges), the Query flow and HNSW narration, validation errors, visualization labels and aria labels are translated. SQL, code, identifiers, setting names (`ef_search`) and product names stay in English; common technical terms are kept in English and explained in Hindi where they first appear.
+
 ### Supported SQL
 
 ```
@@ -70,6 +76,10 @@ Columns: `id, name, email, created_at`. The `users` table holds ids 1-56 (14 row
 | `src/components/scene/` | React Three Fiber scene (client-only, loaded with `ssr: false`). Labels are DOM elements in an overlay, positioned each frame by a projector without React re-renders. |
 | `src/components/diagram/` | 2D diagram: fallback and small-screen view. |
 | `src/components/{stage,inspector,playback,editor,lessons,topbar}/` | The workspace panels. |
+| `src/lib/prefs.ts`, `src/lib/prefsScript.ts`, `src/components/prefs/` | Theme and language: the preference store (`<html data-theme lang>` is the source of truth), the no-flash head script and the header switches. Theme colours are CSS variables in `globals.css`, redefined under `[data-theme="dark"]`; the 3D scene reads its palette from `usePalette()`. |
+| `src/i18n/` | Interface text: `messages/en.ts` defines every key (and the type), `messages/hi.ts` must match it; components call `useMessages()`. |
+| `src/content/hi/`, `src/content/localized.ts` | Hindi lesson content as text-only overlays keyed by the English ids (SQL and checks are never duplicated); `useContent()` returns the content in the current language. |
+| `src/lib/sim/text/`, `src/lib/hnsw/text.ts`, `src/content/runFactsText.ts` | Narration packs (English and Hindi) for the Query flow steps, parser errors, the HNSW search and the inspector's per-run facts. |
 
 ## Limitations
 
@@ -78,4 +88,6 @@ Columns: `id, name, email, created_at`. The `users` table holds ids 1-56 (14 row
 - PostgreSQL is the only engine; the selector lists others as not available.
 - The Query flow animation leaves out locks, the OS page cache, statistics, index pages living in the buffer pool, and eviction.
 - The HNSW lesson is a simplified model: 2-dimensional vectors (real embeddings have hundreds of dimensions), 48 of them, small m and ef_construction, and a fixed demo range for ef_search. It follows the HNSW algorithm, but it is not pgvector's code, and its counts say nothing about real latency.
+- PostgreSQL's own messages (errors, notices, EXPLAIN node names, catalog definitions) and the SQL in examples stay in English in both languages; Hindi wraps them with an explanation where they appear.
+- The server renders English and light first; a returning Hindi visitor's page stays hidden for the moment it takes to render in Hindi (at most 1.5 s).
 - The database lives in memory: changes last until you reset or reload the page. The first page load downloads PGlite (a few MB).

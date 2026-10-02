@@ -1,23 +1,26 @@
-import { planNodeInfo } from "@/content/planNodes";
+import { useContent } from "@/content/localized";
+import { useMessages } from "@/i18n";
 import type { PlanNode } from "@/lib/plan/parsePlan";
 
 /** Everything about one plan node, plus what that kind of node does. */
 export function PlanNodeDetails({ node }: { node: PlanNode }) {
+  const m = useMessages().plan;
+  const info = useContent().planNodeInfo[node.type] ?? m.genericNode;
   const rows: [string, string][] = [
-    ["Estimated rows", String(node.estRows)],
-    ...(node.actualRows !== null ? [["Actual rows", `${node.actualRows}${node.loops && node.loops > 1 ? ` per loop × ${node.loops}` : ""}`] as [string, string]] : []),
-    ["Estimated cost", node.estCost.toFixed(2)],
-    ...(node.totalMs !== null ? [["Time (incl. inputs)", `${node.totalMs.toFixed(3)} ms`] as [string, string]] : []),
-    ...(node.selfMs !== null ? [["Time (this node)", `${node.selfMs.toFixed(3)} ms`] as [string, string]] : []),
-    ...(node.sharedHit !== null ? [["Pages from buffer pool", String(node.sharedHit)] as [string, string]] : []),
-    ...(node.sharedRead !== null ? [["Pages read in", String(node.sharedRead)] as [string, string]] : []),
-    ...node.details,
+    [m.estimatedRows, String(node.estRows)],
+    ...(node.actualRows !== null ? [[m.actualRows, `${node.actualRows}${node.loops && node.loops > 1 ? m.perLoop(node.loops) : ""}`] as [string, string]] : []),
+    [m.estimatedCost, node.estCost.toFixed(2)],
+    ...(node.totalMs !== null ? [[m.timeTotal, `${node.totalMs.toFixed(3)} ms`] as [string, string]] : []),
+    ...(node.selfMs !== null ? [[m.timeSelf, `${node.selfMs.toFixed(3)} ms`] as [string, string]] : []),
+    ...(node.sharedHit !== null ? [[m.fromPool, String(node.sharedHit)] as [string, string]] : []),
+    ...(node.sharedRead !== null ? [[m.readIn, String(node.sharedRead)] as [string, string]] : []),
+    ...node.details.map(([k, v]) => [m.detailLabels[k], v] as [string, string]),
   ];
   return (
     <div className="space-y-3 text-sm">
       <div>
         <h3 className="font-semibold text-ink">{node.type}</h3>
-        <p className="mt-1 leading-relaxed text-ink-soft">{planNodeInfo(node.type)}</p>
+        <p className="mt-1 leading-relaxed text-ink-soft">{info}</p>
       </div>
       <dl className="divide-y divide-line rounded-lg border border-line">
         {rows.map(([k, v]) => (

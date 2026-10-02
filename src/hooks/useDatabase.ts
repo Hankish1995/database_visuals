@@ -7,6 +7,8 @@ import { runScript, type RunOptions } from "@/lib/db/runScript";
 import type { StatementResult } from "@/lib/db/types";
 
 export type DbStatus = "loading" | "ready" | "error";
+/** Thrown when a query arrives before the database has opened; the interface words it. */
+export const DB_NOT_READY = "db-not-ready";
 
 // One in-browser PostgreSQL for a page. Queries run one at a time, in order;
 // `version` bumps after every run or reset so views (like the schema browser)
@@ -45,7 +47,7 @@ export function useDatabase(spec: SeedSpec) {
 
   const run = useCallback((script: string, options?: RunOptions): Promise<StatementResult[]> => {
     const job = queue.current.then(async () => {
-      if (!dbRef.current) throw new Error("The database isn't ready yet.");
+      if (!dbRef.current) throw new Error(DB_NOT_READY);
       const results = await runScript(dbRef.current, script, options);
       setVersion((v) => v + 1);
       return results;
@@ -63,7 +65,7 @@ export function useDatabase(spec: SeedSpec) {
   /** Direct access for special actions (snapshots, crash simulation); runs in the same queue. */
   const withDb = useCallback(<T,>(fn: (db: PGlite) => Promise<T>): Promise<T> => {
     const job = queue.current.then(() => {
-      if (!dbRef.current) throw new Error("The database isn't ready yet.");
+      if (!dbRef.current) throw new Error(DB_NOT_READY);
       return fn(dbRef.current);
     });
     queue.current = job.catch(() => {});

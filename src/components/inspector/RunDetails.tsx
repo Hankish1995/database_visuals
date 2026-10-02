@@ -3,9 +3,12 @@ import { PageRows } from "@/components/inspector/PageRows";
 import { StatusCard } from "@/components/inspector/StatusCard";
 import type { SceneState } from "@/lib/sim/sceneState";
 import type { ConceptId, Simulation } from "@/lib/sim/types";
+import { useLocale } from "@/lib/prefs";
+import { useMessages } from "@/i18n";
 
 export function RunDetails({ concept, sim, scene }: { concept: ConceptId; sim: Simulation; scene: SceneState }) {
-  const facts = runFacts(concept, sim, scene);
+  const facts = runFacts(concept, sim, scene, useLocale());
+  const m = useMessages().inspector;
   const finished = scene.status === "done" || scene.resultShown;
   return (
     <div className="space-y-4 text-sm">
@@ -19,20 +22,20 @@ export function RunDetails({ concept, sim, scene }: { concept: ConceptId; sim: S
         ))}
       </dl>
       {facts.extra === "parseTree" && (
-        <Figure title="Parse tree (simplified)">
+        <Figure title={m.parseTree}>
           {parseTree(sim)}
         </Figure>
       )}
-      {facts.extra === "plan" && <Figure title="Chosen plan (EXPLAIN-style)">{sim.plan.join("\n")}</Figure>}
+      {facts.extra === "plan" && <Figure title={m.chosenPlan}>{sim.plan.join("\n")}</Figure>}
       {facts.extra === "page" && <PageRows sim={sim} scene={scene} />}
       {facts.extra === "result" && finished && sim.rows[0] && (
-        <Figure title="Returned row">{sim.query.columns.map((c) => `${c}: ${sim.rows[0][c]}`).join("\n")}</Figure>
+        <Figure title={m.returnedRow}>{sim.query.columns.map((c) => `${c}: ${sim.rows[0][c]}`).join("\n")}</Figure>
       )}
       {facts.extra === "result" && finished && sim.change?.after && (
-        <Figure title={sim.kind === "insert" ? "Inserted row" : "Row after the update"}>{Object.entries(sim.change.after).map(([k, v]) => `${k}: ${v}`).join("\n")}</Figure>
+        <Figure title={sim.kind === "insert" ? m.insertedRow : m.rowAfterUpdate}>{Object.entries(sim.change.after).map(([k, v]) => `${k}: ${v}`).join("\n")}</Figure>
       )}
       {facts.extra === "wal" && scene.wal.length > 0 && (
-        <Figure title="Records this run">{scene.wal.map((w) => `${w.flushed ? "✓ flushed " : "· pending "} ${w.record}`).join("\n")}</Figure>
+        <Figure title={m.walRecords}>{scene.wal.map((w) => `${w.flushed ? m.flushed : m.pending}  ${w.record}`).join("\n")}</Figure>
       )}
     </div>
   );

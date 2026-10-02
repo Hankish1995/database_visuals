@@ -4,9 +4,16 @@ import { formatCell, runScript } from "@/lib/db/runScript";
 import type { StatementResult } from "@/lib/db/types";
 import { findPlanNodes, parsePlan } from "@/lib/plan/parsePlan";
 
+/** What the check concluded; the interface phrases it (PostgreSQL's `error` text stays as is). */
+export type Verdict =
+  | { kind: "empty" } | { kind: "no-rows" } | { kind: "solved" } | { kind: "wrong-order" } | { kind: "values" }
+  | { kind: "failed"; probe: boolean; error: string } | { kind: "crashed"; error: string }
+  | { kind: "index-ok"; index: string } | { kind: "index-seq"; table: string }
+  | { kind: "columns" | "rows"; expected: number; got: number };
+
 export interface CheckOutcome {
   passed: boolean;
-  message: string;
+  verdict: Verdict;
   /** Everything the learner's SQL produced (and the probe, when there is one). */
   results: StatementResult[];
   got?: StatementResult;
@@ -32,16 +39,16 @@ const norm = (v: unknown) => { const s = formatCell(v); return /^-?\d+(\.\d+)?$/
 const rowKeys = (r: StatementResult) => r.rows.map((row) => Object.values(row).map(norm).join("\u0001"));
 
 export async function checkChallenge(challenge: Challenge, sql: string, seed: SeedSpec): Promise<CheckOutcome> {
-  if (!sql.trim()) return { passed: false, message: "Write some SQL first.", results: [] };
+  if (!sql.trim()) return { passed: false, verdict: { kind: "empty" }, results: [] };
   const { check } = challenge;
   const probe = check.kind === "result" ? check.probe : `EXPLAIN (FORMAT JSON) ${check.query}`;
   const mine = await runFresh(seed, sql, probe);
   if (mine.failed) {
-    const where = "probeFailed" in mine && mine.probeFailed ? "Your SQL ran, but checking it failed" : "Your SQL failed";
-    return { passed: false, message: `${where}: ${mine.failed.error!.message}`, results: mine.results };
+    const probeFailed = "probeFailed" in mine && Boolean(mine.probeFailed);
+    return { passed: false, verdict: { kind: "failed", probe: probeFailed, error: mine.failed.error!.message }, results: mine.results };
   }
   const got = lastQuery(mine.results);
-  if (!got) return { passed: false, message: "Your SQL didn't return any rows to check. End with a SELECT.", results: mine.results };
+  if (!got) return { passed: false, verdict: { kind: "no-rows" }, results: mine.results };
 
   if (check.kind === "uses-index") {
     const plan = parsePlan(got.rows[0]["QUERY PLAN"]);
@@ -50,7 +57,7 @@ export async function checkChallenge(challenge: Challenge, sql: string, seed: Se
     const passed = seq.length === 0 && indexed.length > 0;
     return {
       passed, results: mine.results, got,
-      message: passed ? `Solved: the plan uses ${indexed[0].index}.` : `The plan still reads ${check.table} with a Seq Scan. Try a different index.`,
+      verdict: passed ? { kind: "index-ok", index: indexed[0].index! } : { kind: "index-seq", table: check.table },
     };
   }
 
@@ -58,13 +65,13 @@ export async function checkChallenge(challenge: Challenge, sql: string, seed: Se
   const expected = lastQuery(reference.results)!;
   const [a, b] = [rowKeys(got), rowKeys(expected)];
   if (got.columns.length !== expected.columns.length) {
-    return { passed: false, message: `Expected ${expected.columns.length} column(s), got ${got.columns.length}.`, results: mine.results, got, expected };
+    return { passed: false, verdict: { kind: "columns", expected: expected.columns.length, got: got.columns.length }, results: mine.results, got, expected };
   }
   if (a.length !== b.length) {
-    return { passed: false, message: `Expected ${b.length} row(s), got ${a.length}.`, results: mine.results, got, expected };
+    return { passed: false, verdict: { kind: "rows", expected: b.length, got: a.length }, results: mine.results, got, expected };
   }
   const same = check.ordered ? a.every((k, i) => k === b[i]) : [...a].sort().join("\n") === [...b].sort().join("\n");
-  const message = same ? "Solved! Your result matches." : check.ordered && [...a].sort().join("\n") === [...b].sort().join("\n")
-    ? "Right rows, wrong order." : "Some values don't match the expected result.";
-  return { passed: same, message, results: mine.results, got, expected };
+  const verdict: Verdict = same ? { kind: "solved" } : check.ordered && [...a].sort().join("\n") === [...b].sort().join("\n")
+    ? { kind: "wrong-order" } : { kind: "values" };
+  return { passed: same, verdict, results: mine.results, got, expected };
 }

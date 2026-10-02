@@ -10,7 +10,7 @@ export function highlightSql(sql: string): ReactNode[] {
     const cls = tok.startsWith("--") ? "text-muted italic"
       : tok.startsWith("$") && tok.endsWith("$") ? "text-index"
       : KEYWORD.test(tok) ? "font-semibold text-accent"
-      : /^\d+$/.test(tok) ? "text-[#c2410c]"
+      : /^\d+$/.test(tok) ? "text-number"
       : tok.startsWith("'") ? "text-ok"
       : /^[*,;=()]$/.test(tok) ? "text-ink-soft"
       : "text-ink";

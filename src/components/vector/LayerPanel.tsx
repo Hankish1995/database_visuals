@@ -1,3 +1,4 @@
+import { useMessages } from "@/i18n";
 import { nodeState, type LayerFrame } from "@/lib/hnsw/frame";
 import type { HnswGraph, Neighbor, QueryVector } from "@/lib/hnsw/types";
 
@@ -9,6 +10,7 @@ export function LayerPanel({ graph, layer, frame, query, results, exact, showExa
   graph: HnswGraph; layer: number; frame: LayerFrame; query: QueryVector;
   results: Neighbor[]; exact: Neighbor[]; showExact: boolean; active: boolean; done: boolean;
 }) {
+  const m = useMessages().vector;
   const nodes = graph.nodes.filter((n) => n.level >= layer);
   const pos = new Map(nodes.map((n) => [n.id, n]));
   const links = graph.neighbors[layer];
@@ -17,13 +19,13 @@ export function LayerPanel({ graph, layer, frame, query, results, exact, showExa
   const drawn = new Set<string>();
   // Upper layers are drawn in smaller panels: larger labels keep them readable.
   const t = layer === 0 ? 1 : 1.45;
-  const summary = `Layer ${layer}: ${nodes.length} vectors, ${frame.visited.size} compared, ${frame.kept.size} kept as candidates${frame.current ? `, exploring ${frame.current}` : ""}.`;
+  const summary = m.layerSummary(layer, nodes.length, frame.visited.size, frame.kept.size, frame.current);
 
   return (
     <figure className={`rounded-lg border bg-surface p-2 ${active ? "border-accent/60 ring-1 ring-accent/30" : "border-line"}`}>
       <figcaption className="flex items-baseline justify-between px-1 text-xs">
-        <span className="font-semibold text-ink">Layer {layer}</span>
-        <span className="text-muted">{nodes.length} vectors{layer === graph.topLayer ? " · entry" : layer === 0 ? " · all" : ""}</span>
+        <span className="font-semibold text-ink">{m.layer(layer)}</span>
+        <span className="text-muted">{m.vectors(nodes.length)}{layer === graph.topLayer ? m.entryTag : layer === 0 ? m.allTag : ""}</span>
       </figcaption>
       <svg viewBox="0 0 100 100" role="img" aria-label={summary} className="mt-1 aspect-square w-full">
         {nodes.flatMap((n) => (links[n.id] ?? []).map((to) => {
@@ -40,7 +42,7 @@ export function LayerPanel({ graph, layer, frame, query, results, exact, showExa
         <g aria-hidden>
           <circle cx={query.x} cy={query.y} r={2.6} fill="none" stroke="var(--color-miss)" strokeWidth={0.6} />
           <path d={`M${query.x - 3.6} ${query.y}h7.2M${query.x} ${query.y - 3.6}v7.2`} stroke="var(--color-miss)" strokeWidth={0.6} />
-          <text x={query.x + 3.4} y={query.y - 3} fontSize={3.4 * t} fontWeight={700} fill="var(--color-miss)">Q</text>
+          <text x={query.x + 3.4} y={query.y - 3} fontSize={3.4 * t} fontWeight={700} fill="var(--color-miss)">{m.queryMark}</text>
         </g>
         {nodes.map((n) => {
           const state = nodeState(frame, n.id);
@@ -48,7 +50,7 @@ export function LayerPanel({ graph, layer, frame, query, results, exact, showExa
           const isExact = exactIds.has(n.id);
           return (
             <g key={n.id}>
-              <title>{`${n.id} (${state}${r ? `, result #${r}` : ""}${isExact ? ", true nearest" : ""})`}</title>
+              <title>{m.nodeTitle(n.id, m.nodeState[state], r, isExact)}</title>
               {isExact && (
                 <path d={`M${n.x} ${n.y - 4}l4 4-4 4-4-4z`} fill="none" strokeWidth={0.6}
                   stroke={r ? "var(--color-index)" : "var(--color-miss)"} strokeDasharray={r ? undefined : "1.2 0.8"} />
@@ -69,7 +71,7 @@ export function LayerPanel({ graph, layer, frame, query, results, exact, showExa
                 <text x={n.x + 2.6 * t} y={n.y + 3.6 * t} fontSize={2.6 * t} fill="var(--color-ink-soft)">{n.id}</text>
               )}
               {frame.entry === n.id && (
-                <text x={n.x - 2} y={n.y - 3} textAnchor="end" fontSize={2.6 * t} fontWeight={700} fill="var(--color-flow)">EP</text>
+                <text x={n.x - 2} y={n.y - 3} textAnchor="end" fontSize={2.6 * t} fontWeight={700} fill="var(--color-flow)">{m.entryMark}</text>
               )}
             </g>
           );

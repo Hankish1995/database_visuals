@@ -31,7 +31,8 @@ export type TraceEvent =
   | { kind: "expand"; layer: number; node: string; distance: number }
   | { kind: "visit"; layer: number; node: string; from: string; distance: number; kept: boolean; evicted?: string }
   | { kind: "descend"; fromLayer: number; toLayer: number; node: string; distance: number }
-  | { kind: "stop"; layer: number; reason: string }
+  /** "farther": `node` is farther than every kept candidate; "exhausted": no unexplored candidates left. */
+  | { kind: "stop"; layer: number; reason: "farther" | "exhausted"; node?: string }
   | { kind: "done" };
 
 export interface Neighbor {

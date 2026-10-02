@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
-import { PALETTE } from "@/components/scene/palette";
+import { usePalette } from "@/components/scene/palette";
 import type { Vec3 } from "@/components/scene/sceneLayout";
 
 const TRAVEL_SECONDS = 1.2;
@@ -23,6 +23,7 @@ function sample(points: Vec3[], lengths: number[], t: number): Vec3 {
 // The query itself: a small glowing marker that travels each step's route.
 // Its position is written straight to the object in useFrame.
 export function QueryMarker({ path, reduceMotion, dim }: { path: Vec3[]; reduceMotion: boolean; dim: boolean }) {
+  const PALETTE = usePalette();
   const group = useRef<Group>(null);
   const progress = useRef(1);
   const lengths = useMemo(() => path.reduce<number[]>((acc, p, i) => {

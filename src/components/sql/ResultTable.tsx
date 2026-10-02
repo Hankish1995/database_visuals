@@ -1,15 +1,17 @@
 import { formatCell } from "@/lib/db/runScript";
 import type { StatementResult } from "@/lib/db/types";
+import { useMessages } from "@/i18n";
 
 const MAX_ROWS = 200;
 
 /** Rows of one statement. NULL is shown distinctly; long results are capped with a note. */
 export function ResultTable({ result, caption, highlight }: { result: StatementResult; caption?: string; highlight?: (row: Record<string, unknown>) => boolean }) {
+  const m = useMessages().sql;
   const shown = result.rows.slice(0, MAX_ROWS);
   return (
     <div className="max-h-80 overflow-auto rounded-lg border border-line">
       <table className="w-full border-collapse text-left font-mono text-xs">
-        <caption className="sr-only">{caption ?? `Result of ${result.command}`}</caption>
+        <caption className="sr-only">{caption ?? m.resultOf(result.command)}</caption>
         <thead className="sticky top-0 bg-subtle text-muted">
           <tr>{result.columns.map((c, i) => <th key={`${c.name}-${i}`} scope="col" className="border-b border-line px-2.5 py-1.5 font-semibold whitespace-nowrap">{c.name}</th>)}</tr>
         </thead>
@@ -29,7 +31,7 @@ export function ResultTable({ result, caption, highlight }: { result: StatementR
           ))}
         </tbody>
       </table>
-      {result.rows.length > MAX_ROWS && <p className="border-t border-line bg-subtle px-2.5 py-1 text-xs text-muted">Showing {MAX_ROWS} of {result.rows.length} rows.</p>}
+      {result.rows.length > MAX_ROWS && <p className="border-t border-line bg-subtle px-2.5 py-1 text-xs text-muted">{m.showing(MAX_ROWS, result.rows.length)}</p>}
     </div>
   );
 }

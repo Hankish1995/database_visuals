@@ -1,5 +1,7 @@
 "use client";
 
+import { useMessages } from "@/i18n";
+
 interface SwitchProps {
   label: string;
   checked: boolean;
@@ -9,7 +11,8 @@ interface SwitchProps {
   offText?: string;
 }
 
-export function Switch({ label, checked, onChange, onText = "On", offText = "Off" }: SwitchProps) {
+export function Switch({ label, checked, onChange, onText, offText }: SwitchProps) {
+  const common = useMessages().common;
   return (
     <button
       type="button"
@@ -22,7 +25,7 @@ export function Switch({ label, checked, onChange, onText = "On", offText = "Off
       <span aria-hidden className={`relative block h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? "bg-index" : "bg-line-strong"}`}>
         <span className={`absolute top-0.5 left-0 size-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-4" : "translate-x-0.5"}`} />
       </span>
-      <span aria-hidden className={`w-6 text-left ${checked ? "text-index" : "text-muted"}`}>{checked ? onText : offText}</span>
+      <span aria-hidden className={`min-w-6 text-left ${checked ? "text-index" : "text-muted"}`}>{checked ? onText ?? common.on : offText ?? common.off}</span>
     </button>
   );
 }

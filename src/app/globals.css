@@ -23,18 +23,54 @@
   --color-miss: #be123c;
   --color-miss-soft: #fff1f4;
   --color-miss-line: #fbc6d2;
+  --color-number: #c2410c;
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
 
   --shadow-card: 0 1px 2px rgb(15 29 58 / 0.04), 0 6px 20px -8px rgb(15 29 58 / 0.08);
   --shadow-pop: 0 12px 40px -12px rgb(15 29 58 / 0.25);
 }
 
+/* Dark: deep navy surfaces with softened, slightly brighter accents -- the
+   same roles as light (cyan = flow, violet = index, green = success only,
+   rose = errors and misses), tuned for contrast on dark, never inverted. */
+[data-theme="dark"] {
+  --color-canvas: #0b1220;
+  --color-surface: #111a2c;
+  --color-subtle: #0e1626;
+  --color-line: #22304a;
+  --color-line-strong: #33455f;
+  --color-ink: #e6edf7;
+  --color-ink-soft: #c3cfe0;
+  --color-muted: #94a3bb;
+  --color-flow: #5fd0e6;
+  --color-flow-bright: #22d3ee;
+  --color-flow-soft: #0f2a33;
+  --color-accent: #4a84f3;
+  --color-accent-soft: #172846;
+  --color-index: #a78bfa;
+  --color-index-soft: #221a3d;
+  --color-ok: #4ade80;
+  --color-ok-soft: #0f2a1b;
+  --color-miss: #fb7185;
+  --color-miss-soft: #33131c;
+  --color-miss-line: #6b2335;
+  --color-number: #fdba74;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px -8px rgb(0 0 0 / 0.45);
+  --shadow-pop: 0 12px 40px -12px rgb(0 0 0 / 0.6);
+}
+
 html,
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
+}
+
+/* A returning Hindi reader: hold the first paint until the Hindi text has
+   rendered (PrefsSync removes this; the inline script also times it out). */
+html.locale-pending body {
+  visibility: hidden;
 }
 
 :focus-visible {
@@ -54,6 +90,9 @@ body {
 }
 [popover]::backdrop {
   background: rgb(15 29 58 / 0.12);
+}
+[data-theme="dark"] [popover]::backdrop {
+  background: rgb(0 0 0 / 0.4);
 }
 
 @media (prefers-reduced-motion: reduce) {

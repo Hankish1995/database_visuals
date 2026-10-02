@@ -22,7 +22,7 @@ export function searchLayer(
     candidates.sort(byDistance);
     const current = candidates.shift()!;
     if (current.distance > best[best.length - 1].distance) {
-      trace?.push({ kind: "stop", layer, reason: `${current.id} is farther than every kept candidate, so nothing closer can be reached` });
+      trace?.push({ kind: "stop", layer, reason: "farther", node: current.id });
       stopped = true;
       break;
     }
@@ -45,6 +45,6 @@ export function searchLayer(
       trace?.push({ kind: "visit", layer, node: id, from: current.id, distance: d, kept, evicted });
     }
   }
-  if (!stopped) trace?.push({ kind: "stop", layer, reason: "no unexplored candidates are left" });
+  if (!stopped) trace?.push({ kind: "stop", layer, reason: "exhausted" });
   return best;
 }

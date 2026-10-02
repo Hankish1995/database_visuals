@@ -9,6 +9,8 @@ import { useWebGLSupport } from "@/hooks/useWebGLSupport";
 import { buildSimulation } from "@/lib/sim/buildSimulation";
 import { deriveScene } from "@/lib/sim/sceneState";
 import { DEFAULT_SQL, parseQuery } from "@/lib/sim/sql";
+import { SIM_TEXT } from "@/lib/sim/text";
+import { useLocale } from "@/lib/prefs";
 import type { ConceptId, ParsedQuery, SimOptions } from "@/lib/sim/types";
 
 export type Speed = "slow" | "normal" | "fast";
@@ -24,7 +26,9 @@ const DEFAULT_QUERY = (parseQuery(DEFAULT_SQL) as { ok: true; query: ParsedQuery
 export function useWorkspace() {
   const [lessonId, setLessonId] = useState(DEFAULT_LESSON_ID);
   const [sql, setSql] = useState(DEFAULT_SQL);
-  const [error, setError] = useState<string | null>(null);
+  // The SQL that failed to parse; its message is phrased at render time so
+  // switching language re-words it instead of leaving stale text.
+  const [badSql, setBadSql] = useState<string | null>(null);
   const [query, setQuery] = useState<ParsedQuery>(DEFAULT_QUERY);
   const [options, setOptions] = useState<SimOptions>({ useIndex: true, cache: "miss" });
   const [pinned, setPinned] = useState<ConceptId | null>(null);
@@ -32,7 +36,12 @@ export function useWorkspace() {
   const [chosenView, setChosenView] = useState<ViewMode | null>(null);
   const [cameraReset, setCameraReset] = useState(0);
 
-  const sim = useMemo(() => buildSimulation(query, options), [query, options]);
+  const locale = useLocale();
+  const simText = SIM_TEXT[locale];
+  // A language switch re-narrates the same steps; playback keeps its place.
+  const sim = useMemo(() => buildSimulation(query, options, simText), [query, options, simText]);
+  const parsedBad = badSql === null ? null : parseQuery(badSql, simText.errors);
+  const error = parsedBad && !parsedBad.ok ? parsedBad.error : null;
   const playback = usePlayback(sim.steps.length, STEP_MS[settings.speed]);
   const scene = useMemo(() => deriveScene(sim, playback.index, playback.status), [sim, playback.index, playback.status]);
   const lesson = findLesson(lessonId);
@@ -49,8 +58,8 @@ export function useWorkspace() {
   function run(text?: string) {
     if (text !== undefined) setSql(text);
     const parsed = parseQuery(text ?? sql);
-    if (!parsed.ok) return setError(parsed.error);
-    setError(null);
+    if (!parsed.ok) return setBadSql(text ?? sql);
+    setBadSql(null);
     setQuery(parsed.query);
     setPinned(lesson.kind === "focus" ? lesson.focus ?? null : null);
     playback.start();
@@ -58,7 +67,7 @@ export function useWorkspace() {
 
   function editSql(next: string) {
     setSql(next);
-    setError(null);
+    setBadSql(null);
     const parsed = parseQuery(next);
     if (parsed.ok) setQuery(parsed.query);
     if (playback.status !== "idle") playback.reset();

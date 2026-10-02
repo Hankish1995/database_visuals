@@ -9,7 +9,7 @@ const SHOP = { key: "shop", sql: SHOP_SEED };
 for (const c of CHALLENGES) {
   test(`challenge "${c.id}": the solution passes and the starter doesn't`, async () => {
     const solved = await checkChallenge(c, c.solution, SHOP);
-    assert.equal(solved.passed, true, `solution: ${solved.message}`);
+    assert.equal(solved.passed, true, `solution: ${JSON.stringify(solved.verdict)}`);
     const starter = await checkChallenge(c, c.starter, SHOP);
     assert.equal(starter.passed, false, "starter should not pass");
   });
@@ -18,7 +18,7 @@ for (const c of CHALLENGES) {
 test("a wrong answer is explained", async () => {
   const c = CHALLENGES.find((x) => x.id === "hardware-prices")!;
   const wrongOrder = await checkChallenge(c, "SELECT name, price FROM products WHERE category = 'hardware' ORDER BY price DESC;", SHOP);
-  assert.equal(wrongOrder.message, "Right rows, wrong order.");
+  assert.equal(wrongOrder.verdict.kind, "wrong-order");
   const trigger = CHALLENGES.find((x) => x.id === "price-history")!;
   const noFilter = await checkChallenge(trigger, trigger.solution.replace(" WHEN (OLD.price IS DISTINCT FROM NEW.price)", ""), SHOP);
   assert.equal(noFilter.passed, false, "a trigger that also logs stock-only updates must fail");

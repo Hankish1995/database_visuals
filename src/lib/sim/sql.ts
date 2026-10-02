@@ -1,4 +1,5 @@
 import { TABLE, USER_COUNT } from "@/lib/sim/data";
+import { simEn, type SimText } from "@/lib/sim/text/en";
 import { USER_COLUMNS, type ParsedQuery, type RowValues, type UserColumn } from "@/lib/sim/types";
 
 // The Query flow animation doesn't execute SQL. It recognises four small
@@ -8,7 +9,7 @@ import { USER_COLUMNS, type ParsedQuery, type RowValues, type UserColumn } from 
 //   UPDATE users SET col = 'value'[, ...] WHERE id = n
 //   DELETE FROM users WHERE id = n
 
-export const SUPPORTED_SQL = "SELECT … / UPDATE … / DELETE … WHERE id = <number>, or INSERT INTO users (name, email) VALUES (…)";
+export { SUPPORTED_SQL } from "@/lib/sim/supported";
 export const DEFAULT_SQL = "SELECT * FROM users WHERE id = 42;";
 
 export const CRUD_EXAMPLES = [
@@ -26,111 +27,114 @@ const ok = (query: Omit<ParsedQuery, "columns" | "selectAll"> & Partial<ParsedQu
 const WHERE_ID = /^where id ?= ?(-?\d+)$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-export function parseQuery(input: string): ParseResult {
+type Errors = SimText["errors"];
+
+/** `t` phrases the validation errors (English by default). */
+export function parseQuery(input: string, t: Errors = simEn.errors): ParseResult {
   const sql = input.trim().replace(/;\s*$/, "").replace(/\s+/g, " ");
-  if (!sql) return fail("Type a statement to run, for example: SELECT * FROM users WHERE id = 42;");
-  if (splitTopLevel(sql, ";").length > 1) return fail("Run one statement at a time.");
-  if (/\breturning\b/i.test(sql)) return fail("RETURNING isn't part of this animation.");
+  if (!sql) return fail(t.empty);
+  if (splitTopLevel(sql, ";").length > 1) return fail(t.oneAtATime);
+  if (/\breturning\b/i.test(sql)) return fail(t.returning);
   const verb = sql.split(" ")[0].toLowerCase();
   const raw = input.trim();
-  if (verb === "select") return parseSelect(sql, raw);
-  if (verb === "insert") return parseInsert(sql, raw);
-  if (verb === "update") return parseUpdate(sql, raw);
-  if (verb === "delete") return parseDelete(sql, raw);
-  return fail(`${verb.toUpperCase()} isn't animated here. Supported: ${SUPPORTED_SQL}.`);
+  if (verb === "select") return parseSelect(sql, raw, t);
+  if (verb === "insert") return parseInsert(sql, raw, t);
+  if (verb === "update") return parseUpdate(sql, raw, t);
+  if (verb === "delete") return parseDelete(sql, raw, t);
+  return fail(t.notAnimated(verb.toUpperCase()));
 }
 
-function tableError(table: string): ParseResult | null {
-  return table.toLowerCase() === TABLE ? null : fail(`There is no table "${table}" in this model. Only "users" exists.`);
+function tableError(table: string, t: Errors): ParseResult | null {
+  return table.toLowerCase() === TABLE ? null : fail(t.noTable(table));
 }
 
-function whereId(rest: string, verb: string): number | ParseResult {
+function whereId(rest: string, verb: string, t: Errors): number | ParseResult {
   const where = WHERE_ID.exec(rest.trim());
-  if (!where) return fail(rest ? "Only a WHERE id = <number> filter is animated." : `Add a filter: WHERE id = <number>. ${verb} without one would touch every row.`);
+  if (!where) return fail(rest ? t.whereOnlyId : t.whereMissing(verb));
   const id = Number(where[1]);
-  return Number.isSafeInteger(id) ? id : fail("The id must be a whole number.");
+  return Number.isSafeInteger(id) ? id : fail(t.idWhole);
 }
 
-function parseSelect(sql: string, raw: string): ParseResult {
+function parseSelect(sql: string, raw: string, t: Errors): ParseResult {
   const shape = /^select (.+?) from ([a-z_][a-z0-9_]*)(?: (.*))?$/i.exec(sql);
-  if (!shape) return fail(`Couldn't read that query. Supported: ${SUPPORTED_SQL}.`);
+  if (!shape) return fail(t.selectUnreadable);
   const [, list, table, rest = ""] = shape;
-  const bad = tableError(table);
+  const bad = tableError(table, t);
   if (bad) return bad;
   let names: UserColumn[] | null = null;
   if (list.trim() !== "*") {
     names = list.split(",").map((c) => c.trim().toLowerCase()) as UserColumn[];
     const unknown = names.find((n) => !(USER_COLUMNS as readonly string[]).includes(n));
-    if (unknown !== undefined) return fail(`users has no column "${unknown || "(empty)"}". Columns: ${USER_COLUMNS.join(", ")}.`);
+    if (unknown !== undefined) return fail(t.unknownColumn(unknown));
   }
-  const id = whereId(rest, "SELECT");
+  const id = whereId(rest, "SELECT", t);
   if (typeof id !== "number") return id;
   return ok({ kind: "select", sql: raw, id, values: {}, columns: names ?? [...USER_COLUMNS], selectAll: names === null });
 }
 
-function parseInsert(sql: string, raw: string): ParseResult {
+function parseInsert(sql: string, raw: string, t: Errors): ParseResult {
   const shape = /^insert into ([a-z_][a-z0-9_]*) ?(\((.*?)\))? ?values ?\((.*)\)$/i.exec(sql);
-  if (!shape) return fail("Couldn't read that INSERT. Try: INSERT INTO users (name, email) VALUES ('Dana', 'dana@example.com');");
+  if (!shape) return fail(t.insertUnreadable);
   const [, table, , colList, valueList] = shape;
-  const bad = tableError(table);
+  const bad = tableError(table, t);
   if (bad) return bad;
-  if (!colList) return fail("List the columns: INSERT INTO users (name, email) VALUES (…).");
+  if (!colList) return fail(t.listColumns);
   const cols = colList.split(",").map((c) => c.trim().toLowerCase());
   const vals = splitTopLevel(valueList, ",").map((v) => v.trim());
-  if (cols.length !== vals.length) return fail(`${cols.length} column(s) but ${vals.length} value(s).`);
+  if (cols.length !== vals.length) return fail(t.countMismatch(cols.length, vals.length));
   const values: RowValues = {};
   for (let i = 0; i < cols.length; i++) {
-    const problem = assign(values, cols[i], vals[i], true);
+    const problem = assign(values, cols[i], vals[i], true, t);
     if (problem) return fail(problem);
   }
-  if (!values.name || !values.email) return fail("name and email are NOT NULL: give both.");
+  if (!values.name || !values.email) return fail(t.notNull);
   return ok({ kind: "insert", sql: raw, id: values.id ?? null, values });
 }
 
-function parseUpdate(sql: string, raw: string): ParseResult {
+function parseUpdate(sql: string, raw: string, t: Errors): ParseResult {
   const shape = /^update ([a-z_][a-z0-9_]*) set (.+?)( where .*)?$/i.exec(sql);
-  if (!shape) return fail("Couldn't read that UPDATE. Try: UPDATE users SET email = 'bob@new.example' WHERE id = 42;");
+  if (!shape) return fail(t.updateUnreadable);
   const [, table, setList, rest = ""] = shape;
-  const bad = tableError(table);
+  const bad = tableError(table, t);
   if (bad) return bad;
   const values: RowValues = {};
   for (const part of splitTopLevel(setList, ",")) {
     const m = /^\s*([a-z_]+) ?= ?(.+?)\s*$/i.exec(part);
-    if (!m) return fail(`Couldn't read "${part.trim()}". Write column = 'value'.`);
-    if (m[1].toLowerCase() === "id") return fail("Changing the primary key isn't animated; update name, email or created_at.");
-    const problem = assign(values, m[1].toLowerCase(), m[2], false);
+    if (!m) return fail(t.setUnreadable(part.trim()));
+    if (m[1].toLowerCase() === "id") return fail(t.pkUpdate);
+    const problem = assign(values, m[1].toLowerCase(), m[2], false, t);
     if (problem) return fail(problem);
   }
-  const id = whereId(rest, "UPDATE");
+  const id = whereId(rest, "UPDATE", t);
   if (typeof id !== "number") return id;
   return ok({ kind: "update", sql: raw, id, values });
 }
 
-function parseDelete(sql: string, raw: string): ParseResult {
+function parseDelete(sql: string, raw: string, t: Errors): ParseResult {
   const shape = /^delete from ([a-z_][a-z0-9_]*)( where .*)?$/i.exec(sql);
-  if (!shape) return fail("Couldn't read that DELETE. Try: DELETE FROM users WHERE id = 42;");
-  const bad = tableError(shape[1]);
+  if (!shape) return fail(t.deleteUnreadable);
+  const bad = tableError(shape[1], t);
   if (bad) return bad;
-  const id = whereId(shape[2] ?? "", "DELETE");
+  const id = whereId(shape[2] ?? "", "DELETE", t);
   if (typeof id !== "number") return id;
   return ok({ kind: "delete", sql: raw, id, values: {} });
 }
 
 /** Parses one literal into `values[col]`; returns an error message, or null. */
-function assign(values: RowValues, col: string, literal: string, allowId: boolean): string | null {
-  if (!(USER_COLUMNS as readonly string[]).includes(col)) return `users has no column "${col}". Columns: ${USER_COLUMNS.join(", ")}.`;
-  if (/^default$/i.test(literal)) return col === "id" || col === "created_at" ? null : `${col} has no default.`;
+function assign(values: RowValues, col: string, literal: string, allowId: boolean, t: Errors): string | null {
+  if (!(USER_COLUMNS as readonly string[]).includes(col)) return t.unknownColumn(col);
+  if (/^default$/i.test(literal)) return col === "id" || col === "created_at" ? null : t.noDefault(col);
   if (col === "id") {
-    if (!allowId) return "Changing the primary key isn't animated.";
-    if (!/^\d+$/.test(literal)) return "id must be a positive whole number.";
+    if (!allowId) return t.pkChange;
+    if (!/^\d+$/.test(literal)) return t.idPositive;
     values.id = Number(literal);
     return null;
   }
   const str = /^'((?:[^']|'')*)'$/.exec(literal);
-  if (!str) return `${col} needs a quoted text value, like '…'.`;
+  if (!str) return t.quoted(col);
   const text = str[1].replace(/''/g, "'");
-  if (col === "created_at" && !DATE.test(text)) return "created_at must look like '2025-06-30'.";
-  if (col !== "created_at" && !text.trim()) return `${col} can't be empty.`;
+  if (col === "created_at" && !DATE.test(text)) return t.dateFormat;
+  if (col !== "created_at" && !text.trim()) return t.blank(col);
   values[col as "name" | "email" | "created_at"] = text;
   return null;
 }

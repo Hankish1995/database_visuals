@@ -6,24 +6,26 @@ import { Braces, CircleAlert, Database, Play } from "lucide-react";
 import { highlightSql } from "@/components/editor/highlightSql";
 import { CRUD_EXAMPLES, formatSql, SUPPORTED_SQL } from "@/lib/sim/sql";
 import type { Workspace } from "@/hooks/useWorkspace";
+import { useMessages } from "@/i18n";
 
 // One-line SQL editor: a textarea with a coloured overlay behind it.
 // Enter runs the query; editing it resets the scene.
 export function QueryEditor({ ws, className = "" }: { ws: Workspace; className?: string }) {
   const overlay = useRef<HTMLPreElement>(null);
+  const m = useMessages().editor;
   const submit = (e: FormEvent) => { e.preventDefault(); ws.run(); };
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ws.run(); }
   };
 
   return (
-    <section aria-label="SQL editor" className={`rounded-xl border border-line bg-surface p-2 shadow-card ${className}`}>
+    <section aria-label={m.region} className={`rounded-xl border border-line bg-surface p-2 shadow-card ${className}`}>
       <form onSubmit={submit} className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
         <label htmlFor="sql-input" className="hidden items-center gap-2 px-2 text-sm font-semibold text-ink sm:flex">
           <Database className="size-5 text-muted" aria-hidden /> SQL
         </label>
-        <div role="group" aria-label="Try a statement" className="flex w-full shrink-0 flex-wrap items-center gap-1 sm:px-1 lg:order-first lg:w-auto">
-          <span className="sr-only">Watch a</span>
+        <div role="group" aria-label={m.tryStatement} className="flex w-full shrink-0 flex-wrap items-center gap-1 sm:px-1 lg:order-first lg:w-auto">
+          <span className="sr-only">{m.watchA}</span>
           {CRUD_EXAMPLES.map((ex) => {
             const current = ws.sim.kind === ex.kind;
             return (
@@ -41,7 +43,7 @@ export function QueryEditor({ ws, className = "" }: { ws: Workspace; className?:
               {highlightSql(ws.sql)}
             </pre>
             <textarea id="sql-input" rows={1} wrap="off" spellCheck={false} autoComplete="off" autoCapitalize="off"
-              aria-label="SQL query" aria-describedby="sql-help" aria-invalid={Boolean(ws.error)} aria-errormessage={ws.error ? "sql-error" : undefined}
+              aria-label={m.sqlQuery} aria-describedby="sql-help" aria-invalid={Boolean(ws.error)} aria-errormessage={ws.error ? "sql-error" : undefined}
               value={ws.sql} onChange={(e) => ws.editSql(e.target.value)} onKeyDown={onKeyDown}
               onScroll={(e) => { if (overlay.current) overlay.current.scrollLeft = e.currentTarget.scrollLeft; }}
               className="relative block w-full resize-none overflow-x-auto overflow-y-hidden bg-transparent px-3 py-2.5 font-mono text-[15px] leading-6 whitespace-pre text-transparent caret-ink outline-none selection:bg-accent/20 [scrollbar-width:none]" />
@@ -49,10 +51,10 @@ export function QueryEditor({ ws, className = "" }: { ws: Workspace; className?:
         </div>
         <button type="button" onClick={() => ws.setSql(formatSql(ws.sql))}
           className="inline-flex h-10 items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium text-ink-soft hover:border-line-strong hover:text-ink">
-          <Braces className="size-4" aria-hidden /> Format
+          <Braces className="size-4" aria-hidden /> {m.format}
         </button>
         <button type="submit" className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-white shadow-sm hover:bg-accent/90 sm:flex-none">
-          <Play className="size-4 fill-current" aria-hidden /> Run query
+          <Play className="size-4 fill-current" aria-hidden /> {m.run}
         </button>
       </form>
       {ws.error ? (
@@ -61,12 +63,12 @@ export function QueryEditor({ ws, className = "" }: { ws: Workspace; className?:
           <span>
             {ws.error}{" "}
             <Link href={`/practice?sql=${encodeURIComponent(ws.sql)}`} className="font-semibold text-accent underline-offset-2 hover:underline">
-              Run it for real in the SQL Lab →
+              {m.runInLab}
             </Link>
           </span>
         </p>
       ) : (
-        <p id="sql-help" className="mt-1.5 px-2 text-xs text-muted">Simulated subset: <code className="font-mono">{SUPPORTED_SQL}</code>. Press Enter to run.</p>
+        <p id="sql-help" className="mt-1.5 px-2 text-xs text-muted">{m.help} <code className="font-mono">{SUPPORTED_SQL}</code>. {m.pressEnter}</p>
       )}
     </section>
   );

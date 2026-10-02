@@ -63,22 +63,3 @@ export function nodeState(frame: LayerFrame, id: string): NodeState {
   if (frame.visited.has(id)) return "visited";
   return "unvisited";
 }
-
-const fmt = (d: number) => d.toFixed(1);
-
-/** One plain-language sentence for the step the animation is on. */
-export function describe(event: TraceEvent | null, efSearch: number, k: number): string {
-  if (!event) return "Press Run search to start at the entry point on the top layer.";
-  switch (event.kind) {
-    case "enter": return `Start at the entry point ${event.node} on layer ${event.layer} (distance ${fmt(event.distance)}).`;
-    case "expand": return event.layer > 0
-      ? `Layer ${event.layer}: check the links of ${event.node}, looking for anything closer (greedy, one best candidate).`
-      : `Layer 0: explore the links of ${event.node}, the nearest unexplored candidate (distance ${fmt(event.distance)}).`;
-    case "visit": return event.kept
-      ? `${event.node} is ${fmt(event.distance)} away -- close enough to join the candidate list${event.evicted ? `, which pushes out ${event.evicted}` : ""}.`
-      : `${event.node} is ${fmt(event.distance)} away -- not closer than the candidates already kept, so it is dropped.`;
-    case "descend": return `Nothing closer on layer ${event.fromLayer}. Drop to layer ${event.toLayer}, starting from ${event.node}.`;
-    case "stop": return event.layer > 0 ? `Layer ${event.layer} is done: ${event.reason}.` : `Layer 0 stops: ${event.reason}. The list held up to ${efSearch} candidates.`;
-    case "done": return `Return the ${k} nearest of the candidates found.`;
-  }
-}

@@ -21,7 +21,7 @@ export interface PlanNode {
   sharedHit: number | null;
   sharedRead: number | null;
   /** Conditions, filters, sort keys... as labelled lines. */
-  details: [string, string][];
+  details: [DetailKey, string][];
   children: PlanNode[];
 }
 
@@ -35,12 +35,12 @@ export interface ParsedPlan {
 type Raw = Record<string, unknown>;
 const num = (v: unknown) => (typeof v === "number" ? v : null);
 
-const DETAIL_KEYS: [string, string][] = [
-  ["Index Cond", "Index condition"], ["Recheck Cond", "Recheck"], ["Filter", "Filter"], ["Rows Removed by Filter", "Rows removed by filter"],
-  ["Hash Cond", "Hash condition"], ["Merge Cond", "Merge condition"], ["Join Filter", "Join filter"], ["Sort Key", "Sort key"],
-  ["Sort Method", "Sort method"], ["Group Key", "Group key"], ["Heap Fetches", "Heap fetches"], ["Heap Blocks Exact", "Heap blocks"],
-  ["Presorted Key", "Presorted key"], ["Subplan Name", "Subplan"], ["CTE Name", "CTE"], ["Function Name", "Function"],
-];
+// EXPLAIN's own keys; the interface labels them in the reader's language.
+export const DETAIL_KEYS = [
+  "Index Cond", "Recheck Cond", "Filter", "Rows Removed by Filter", "Hash Cond", "Merge Cond", "Join Filter", "Sort Key",
+  "Sort Method", "Group Key", "Heap Fetches", "Heap Blocks Exact", "Presorted Key", "Subplan Name", "CTE Name", "Function Name",
+] as const;
+export type DetailKey = (typeof DETAIL_KEYS)[number];
 
 function toNode(raw: Raw, path: string): PlanNode {
   const loops = num(raw["Actual Loops"]);
@@ -48,10 +48,10 @@ function toNode(raw: Raw, path: string): PlanNode {
   const children = ((raw.Plans as Raw[] | undefined) ?? []).map((c, i) => toNode(c, `${path}.${i}`));
   const totalMs = perLoop !== null && loops !== null ? perLoop * loops : null;
   const childMs = children.reduce((s, c) => s + (c.totalMs ?? 0), 0);
-  const details = DETAIL_KEYS.flatMap(([key, label]) => {
+  const details = DETAIL_KEYS.flatMap((key) => {
     const v = raw[key];
     if (v === undefined || v === null || v === 0) return [];
-    return [[label, Array.isArray(v) ? v.join(", ") : String(v)] as [string, string]];
+    return [[key, Array.isArray(v) ? v.join(", ") : String(v)] as [DetailKey, string]];
   });
   return {
     id: path,

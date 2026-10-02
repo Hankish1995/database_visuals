@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildGraph, EF_MAX, EF_MIN, GRAPH, K, QUERIES } from "@/lib/hnsw/dataset";
-import { deriveFrame, describe } from "@/lib/hnsw/frame";
+import { deriveFrame } from "@/lib/hnsw/frame";
+import { HNSW_TEXT } from "@/lib/hnsw/text";
+const describe = HNSW_TEXT.en.describe;
 import { exactSearch, hnswSearch, recall } from "@/lib/hnsw/search";
 
 const query = (label: string) => QUERIES.find((q) => q.label === label)!;

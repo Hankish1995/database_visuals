@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ResultTable } from "@/components/sql/ResultTable";
+import { useMessages } from "@/i18n";
 import type { StatementResult } from "@/lib/db/types";
 
 interface Version { lp: number; lp_flags: number; t_xmin: string | null; t_xmax: string | null; xmin_status: string | null; xmax_status: string | null }
@@ -17,6 +18,7 @@ function visible(v: Version, snap: number): boolean {
 }
 
 export function VersionsView({ versions }: { versions: StatementResult }) {
+  const m = useMessages().labs;
   const rows = versions.rows as unknown as Version[];
   const xids = rows.flatMap((v) => [v.t_xmin, v.t_xmax]).filter((x): x is string => x !== null && x !== "0").map(Number);
   const min = Math.min(...xids);
@@ -27,14 +29,14 @@ export function VersionsView({ versions }: { versions: StatementResult }) {
 
   return (
     <div className="space-y-2">
-      <ResultTable result={versions} caption="Row versions on page 0" highlight={(r) => visible(r as unknown as Version, at)} />
+      <ResultTable result={versions} caption={m.versionsCaption} highlight={(r) => visible(r as unknown as Version, at)} />
       {xids.length > 0 && (
         <div className="rounded-lg border border-line bg-subtle px-3 py-2 text-xs">
-          <label htmlFor="snapshot" className="font-semibold text-ink">Snapshot: every transaction before {at} has finished</label>
+          <label htmlFor="snapshot" className="font-semibold text-ink">{m.snapshot(at)}</label>
           <input id="snapshot" type="range" min={min} max={max} value={at} onChange={(e) => setSnap(Number(e.target.value))} className="mt-1 block w-full accent-[var(--color-accent)]" />
           <p className="text-ink-soft">
-            {seen.length ? <>Sees slot {seen.map((v) => v.lp).join(", ")} (highlighted).</> : <>Sees no version of this row.</>}{" "}
-            {at === max ? "That's a snapshot taken now." : "Older snapshots see older versions."}
+            {seen.length ? m.sees(seen.map((v) => v.lp).join(", ")) : m.seesNone}{" "}
+            {at === max ? m.snapshotNow : m.snapshotOlder}
           </p>
         </div>
       )}

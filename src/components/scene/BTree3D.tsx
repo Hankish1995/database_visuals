@@ -2,7 +2,7 @@
 
 import { Line } from "@react-three/drei";
 import { BTREE, BTREE_CHILDREN } from "@/lib/sim/data";
-import { PALETTE } from "@/components/scene/palette";
+import { usePalette } from "@/components/scene/palette";
 import { SceneBlock } from "@/components/scene/SceneBlock";
 import { BTREE_POS, type Vec3 } from "@/components/scene/sceneLayout";
 import type { SceneViewProps } from "@/components/scene/types";
@@ -10,6 +10,7 @@ import type { SceneViewProps } from "@/components/scene/types";
 export const BTREE_SIZE: Record<0 | 1 | 2, Vec3> = { 0: [2.1, 0.6, 1.1], 1: [1.9, 0.55, 1.0], 2: [1.55, 0.5, 0.9] };
 
 export function BTree3D({ sim, scene, selected, onSelect, reduceMotion }: SceneViewProps) {
+  const PALETTE = usePalette();
   // Every write keeps the index up to date; the toggle only decides whether lookups use it.
   const enabled = sim.options.useIndex || sim.kind === "insert";
   const lit = new Set(scene.btreeLit);

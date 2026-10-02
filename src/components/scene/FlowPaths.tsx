@@ -2,12 +2,13 @@
 
 import { useMemo } from "react";
 import { Line } from "@react-three/drei";
-import { PALETTE } from "@/components/scene/palette";
+import { usePalette } from "@/components/scene/palette";
 import { edgePoints, planEdges } from "@/components/scene/sceneLayout";
 import type { SceneViewProps } from "@/components/scene/types";
 
 /** The routes this plan uses: grey ahead, pale cyan once travelled, bright cyan for the current hop. */
 export function FlowPaths({ sim, scene }: Pick<SceneViewProps, "sim" | "scene">) {
+  const PALETTE = usePalette();
   const edges = useMemo(() => planEdges(sim).map((id) => ({ id, points: edgePoints(id, sim, scene) })), [sim, scene]);
   return edges.map(({ id, points }) => {
     const current = scene.edge === id;

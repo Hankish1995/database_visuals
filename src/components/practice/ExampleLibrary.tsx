@@ -3,12 +3,14 @@
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { EXAMPLE_GROUPS, type SqlExample } from "@/content/examples";
+import { useContent } from "@/content/localized";
 
 export function ExampleLibrary({ current, onPick }: { current: string | null; onPick: (e: SqlExample) => void }) {
+  const groups = useContent().exampleGroups;
   const [open, setOpen] = useState<string | null>(EXAMPLE_GROUPS[0].id);
   return (
     <div className="space-y-1">
-      {EXAMPLE_GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.id}>
           <button type="button" aria-expanded={open === group.id} onClick={() => setOpen(open === group.id ? null : group.id)}
             className="flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm font-semibold text-ink hover:bg-subtle">

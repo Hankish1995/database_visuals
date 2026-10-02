@@ -4,6 +4,7 @@ import { Anchored, type AnchorRegistry } from "@/components/scene/labels/anchors
 import { SceneTag } from "@/components/scene/SceneTag";
 import { WAL_CENTER, WAL_SIZE, walRecordPos } from "@/components/scene/sceneLayout";
 import type { SceneViewProps } from "@/components/scene/types";
+import { useMessages } from "@/i18n";
 
 type Props = SceneViewProps & { registry: AnchorRegistry };
 
@@ -11,8 +12,9 @@ type Props = SceneViewProps & { registry: AnchorRegistry };
 const SHORT: Record<string, string> = { Transaction: "Xact", INSERT_LEAF: "INSERT", HOT_UPDATE: "HOT UPD" };
 
 export function WalLabels({ registry, sim, scene, selected, onSelect }: Props) {
+  const m = useMessages().scene;
   const flushed = scene.wal.length > 0 && scene.wal.every((w) => w.flushed);
-  const subtitle = sim.kind === "select" ? "A read writes nothing here" : scene.wal.length === 0 ? "Write-ahead log" : flushed ? "Flushed to disk: durable" : "In memory, not yet flushed";
+  const subtitle = sim.kind === "select" ? m.walRead : scene.wal.length === 0 ? m.walLog : flushed ? m.walFlushed : m.walPending;
   const state = scene.active === "wal" ? "active" : scene.visited.has("wal") ? "done" : null;
   return (
     <>
@@ -27,7 +29,7 @@ export function WalLabels({ registry, sim, scene, selected, onSelect }: Props) {
         );
       })}
       <Anchored registry={registry} id="wal-tag" position={[WAL_CENTER[0], 0, WAL_CENTER[2] + WAL_SIZE[1] / 2 + 0.75]}>
-        <SceneTag title="WAL" subtitle={subtitle} state={state} selected={selected === "wal"} onSelect={() => onSelect("wal")} />
+        <SceneTag title={m.wal} subtitle={subtitle} state={state} selected={selected === "wal"} onSelect={() => onSelect("wal")} />
       </Anchored>
     </>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { PALETTE } from "@/components/scene/palette";
+import { usePalette } from "@/components/scene/palette";
 import { SceneBlock } from "@/components/scene/SceneBlock";
 import { STAGE_POS, STAGE_SIZE, type StageId } from "@/components/scene/sceneLayout";
 import type { SceneViewProps } from "@/components/scene/types";
@@ -14,6 +14,7 @@ export const stageState = (id: StageId, scene: SceneViewProps["scene"]) => {
 };
 
 export function Stages3D({ scene, selected, onSelect, reduceMotion }: SceneViewProps) {
+  const PALETTE = usePalette();
   return STAGES.map((id) => {
     const state = stageState(id, scene);
     return (

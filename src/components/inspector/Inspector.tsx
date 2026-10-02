@@ -1,20 +1,22 @@
 "use client";
 
 import { useState, type KeyboardEvent } from "react";
-import { CONCEPTS } from "@/content/concepts";
+import { useContent } from "@/content/localized";
+import { useMessages } from "@/i18n";
 import { CONCEPT_ICONS } from "@/components/inspector/conceptIcons";
 import { Overview } from "@/components/inspector/Overview";
 import { RunDetails } from "@/components/inspector/RunDetails";
 import { StepList } from "@/components/inspector/StepList";
 import type { Workspace } from "@/hooks/useWorkspace";
 
-const TABS = [["overview", "Overview"], ["run", "This run"], ["steps", "Steps"]] as const;
+const TABS = [["overview", "overview"], ["run", "thisRun"], ["steps", "steps"]] as const;
 type Tab = (typeof TABS)[number][0];
 
 // Explains whatever is selected, or else whatever the query is doing now.
 export function Inspector({ ws, className = "" }: { ws: Workspace; className?: string }) {
   const [tab, setTab] = useState<Tab>("overview");
-  const concept = CONCEPTS[ws.inspected];
+  const m = useMessages().inspector;
+  const concept = useContent().concepts[ws.inspected];
   const Icon = CONCEPT_ICONS[ws.inspected];
   const lab = ws.lesson.kind === "lab";
 
@@ -28,24 +30,24 @@ export function Inspector({ ws, className = "" }: { ws: Workspace; className?: s
   }
 
   return (
-    <aside aria-label="Inspector" className={`flex flex-col rounded-xl border border-line bg-surface shadow-card lg:min-h-0 ${className}`}>
+    <aside aria-label={m.region} className={`flex flex-col rounded-xl border border-line bg-surface shadow-card lg:min-h-0 ${className}`}>
       <div className="flex items-center gap-3 px-5 pt-4 pb-3">
         <Icon className="size-6 text-accent" aria-hidden />
         <h2 className="text-base font-bold uppercase tracking-wide text-ink">{concept.name}</h2>
         {ws.pinned && ws.lesson.kind !== "focus" && (
-          <button type="button" onClick={() => ws.select(null)} className="ml-auto text-xs font-medium text-accent hover:underline">Follow playback</button>
+          <button type="button" onClick={() => ws.select(null)} className="ml-auto text-xs font-medium text-accent hover:underline">{m.followPlayback}</button>
         )}
       </div>
       {lab ? (
         <div className="px-5 pb-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Overview concept={concept} /></div>
       ) : (
       <>
-      <div role="tablist" aria-label="Inspector sections" className="mx-5 grid grid-cols-3 gap-1 rounded-lg border border-line bg-subtle p-1" onKeyDown={onKey}>
+      <div role="tablist" aria-label={m.sections} className="mx-5 grid grid-cols-3 gap-1 rounded-lg border border-line bg-subtle p-1" onKeyDown={onKey}>
         {TABS.map(([id, label]) => (
           <button key={id} id={`tab-${id}`} type="button" role="tab" aria-selected={tab === id} aria-controls="inspector-panel" tabIndex={tab === id ? 0 : -1}
             onClick={() => setTab(id)}
             className={`rounded-md py-1.5 text-sm font-medium ${tab === id ? "bg-surface text-accent shadow-sm ring-1 ring-accent/40" : "text-muted hover:text-ink"}`}>
-            {label}
+            {m[label]}
           </button>
         ))}
       </div>

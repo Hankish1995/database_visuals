@@ -1,5 +1,6 @@
 import { ChevronRight, CirclePlay, Crosshair, FlaskConical, Waypoints } from "lucide-react";
 import type { Lesson, LessonSection } from "@/content/lessons";
+import { useMessages } from "@/i18n";
 
 interface Props {
   section: LessonSection;
@@ -10,10 +11,11 @@ interface Props {
 }
 
 const KIND_ICON = { ready: CirclePlay, focus: Crosshair, lab: FlaskConical, vector: Waypoints };
-const KIND_NOTE = { ready: "", focus: "Focused view", lab: "Hands-on lab", vector: "Interactive simulation" };
 
 export function LessonSectionGroup({ section, current, expanded, onToggle, onChoose }: Props) {
   const listId = `lessons-${section.id}`;
+  const m = useMessages().lessons;
+  const KIND_NOTE = { ready: "", focus: m.kindFocus, lab: m.kindLab, vector: m.kindVector };
   return (
     <div className="border-b border-line py-1 last:border-b-0">
       <button type="button" aria-expanded={expanded} aria-controls={listId} onClick={onToggle}
