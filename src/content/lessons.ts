@@ -1,8 +1,9 @@
 import type { ComponentId, LabConceptId, SimOptions } from "@/lib/sim/types";
 
 // "ready" = the animated Query flow lesson, "focus" = the Query flow scene
-// zoomed in on one component, "lab" = a hands-on lesson on real PostgreSQL.
-export type LessonKind = "ready" | "focus" | "lab";
+// zoomed in on one component, "lab" = a hands-on lesson on real PostgreSQL,
+// "vector" = the interactive HNSW / ef_search simulation (no database).
+export type LessonKind = "ready" | "focus" | "lab" | "vector";
 
 export interface Lesson {
   id: string;
@@ -41,6 +42,7 @@ export const LESSON_SECTIONS: LessonSection[] = [
       { id: "btree", number: "2.1", title: "B-tree lookups", subtitle: "Root to leaf in a few reads", kind: "focus", focus: "btree", preset: { useIndex: true } },
       { id: "index-vs-scan", number: "2.2", title: "Index vs. table scan", subtitle: "Why plans differ", kind: "focus", focus: "planner", preset: { useIndex: false } },
       { id: "composite", number: "2.3", title: "Composite indexes", subtitle: "Column order matters", kind: "lab", lab: "composite", concept: "compositeIndex" },
+      { id: "hnsw", number: "2.4", title: "HNSW vector search", subtitle: "ef_search, recall and work", kind: "vector" },
     ],
   },
   {

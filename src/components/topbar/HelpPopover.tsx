@@ -15,10 +15,11 @@ export function HelpPopover() {
           Press <strong>Run query</strong> and the query plays through the database on its own. Pause, resume or replay it from the
           progress strip, and select any part of the scene to explain it in the inspector.
         </p>
-        <h3 className="mt-4 font-semibold">Two kinds of lesson</h3>
+        <h3 className="mt-4 font-semibold">Kinds of lesson</h3>
         <p className="mt-1 text-ink-soft">
           <strong>Query flow</strong> is an animated, simplified model. The <strong>hands-on labs</strong>, <strong>Practice</strong>,{" "}
           <strong>Visualize</strong> and <strong>Challenges</strong> run real PostgreSQL 18 inside this tab (PGlite): nothing is sent anywhere.
+          The <strong>HNSW vector search</strong> lesson is an interactive simulation of pgvector&apos;s index on a fixed demo dataset.
         </p>
         <h3 className="mt-4 font-semibold">Query flow&apos;s SQL</h3>
         <p className="mt-1 text-ink-soft">The animation follows a SELECT, INSERT, UPDATE or DELETE on the users table (use the buttons above the editor); anything else can run in the SQL Lab:</p>

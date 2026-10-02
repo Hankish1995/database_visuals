@@ -34,6 +34,15 @@ npm run build
 - **3D / 2D** switches views. Small screens default to 2D; without WebGL the 2D diagram is used automatically.
 - Settings: playback speed and reduced motion (the OS `prefers-reduced-motion` setting is also respected).
 
+### HNSW vector search (lesson 2.4)
+
+An interactive simulation of a pgvector HNSW index -- PostgreSQL has no vector index of its own; the pgvector extension adds the `vector` type and the `hnsw` index, and `SET hnsw.ef_search = N` (default 40) controls the search at run time. No database or network is involved.
+
+- Pick **Query A/B/C**, set **ef_search** (5-32) and press **Run search**: the traversal animates from the top layer's entry point, layer by layer, then across layer 0. Pause/Resume and Replay sit next to it; changing a setting while a search is shown replays it.
+- **Compare with exact** overlays the true 5 nearest (purple diamonds; red dashed when the search missed one) and lists both answers.
+- The metrics -- vectors compared, recall@5 against the exact answer, work relative to a full scan -- are illustrative counts from a 48-vector demo, not benchmarks.
+- What the fixed dataset shows: Query A finds 1 of 5 at ef_search 5 and all 5 at 6; Query C needs 8; Query B misses one until 32.
+
 ### Supported SQL
 
 ```
@@ -52,6 +61,8 @@ Columns: `id, name, email, created_at`. The `users` table holds ids 1-56 (14 row
 | `src/lib/db/` | PGlite engine loading, seeded snapshots, the statement splitter/runner, catalog queries, the crash helper and the challenge checker. |
 | `src/content/examples/`, `src/content/labs/`, `src/content/challenges.ts` | The SQL Lab examples, lab lessons and challenges (all covered by `npm test`). |
 | `src/lib/plan/` + `src/components/plan/` | EXPLAIN JSON parsing and the plan tree. |
+| `src/lib/hnsw/` | The HNSW lesson's model: the fixed 2D dataset and graph (built by HNSW insertion), the traced layer search, exact search, recall and the per-step animation frame. No rendering code. |
+| `src/components/vector/`, `src/hooks/useHnswDemo.ts`, `src/content/vectorConcepts.ts` | The HNSW lesson's SVG stage, inspector, state and glossary. |
 | `src/lib/sim/` | The Query flow simulation: mock data, the SQL subset parser, the step builder and the derived scene state. No rendering code. |
 | `src/content/` | Concept definitions, lessons and the inspector's per-run facts. |
 | `src/hooks/usePlayback.ts` | Automatic timing, pause/resume, replay and seek. |
@@ -66,4 +77,5 @@ Columns: `id, name, email, created_at`. The `users` table holds ids 1-56 (14 row
 - The in-browser database is a single session, so concurrency (two transactions at once) is explained with the MVCC snapshot explorer rather than shown live. It also can't crash mid-transaction; the Crash recovery lab crashes between transactions.
 - PostgreSQL is the only engine; the selector lists others as not available.
 - The Query flow animation leaves out locks, the OS page cache, statistics, index pages living in the buffer pool, and eviction.
+- The HNSW lesson is a simplified model: 2-dimensional vectors (real embeddings have hundreds of dimensions), 48 of them, small m and ef_construction, and a fixed demo range for ef_search. It follows the HNSW algorithm, but it is not pgvector's code, and its counts say nothing about real latency.
 - The database lives in memory: changes last until you reset or reload the page. The first page load downloads PGlite (a few MB).

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { DEFAULT_LESSON_ID, findLesson } from "@/content/lessons";
+import { useHnswDemo } from "@/hooks/useHnswDemo";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { usePlayback } from "@/hooks/usePlayback";
 import { useWebGLSupport } from "@/hooks/useWebGLSupport";
@@ -37,6 +38,9 @@ export function useWorkspace() {
   const lesson = findLesson(lessonId);
 
   const systemReduced = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const reduceMotion = settings.motion === "reduce" || systemReduced;
+  // The HNSW lesson (2.4): its own deterministic search and playback.
+  const hnsw = useHnswDemo(settings.speed, reduceMotion);
   const wide = useMediaQuery("(min-width: 768px)", true);
   const webgl = useWebGLSupport();
   const view: ViewMode = webgl === false ? "2d" : chosenView ?? (wide ? "3d" : "2d");
@@ -72,13 +76,14 @@ export function useWorkspace() {
     setPinned(next.focus ?? null);
     if (next.preset) setOptions((o) => ({ ...o, ...next.preset }));
     playback.reset();
+    hnsw.reset();
   }
 
   return {
     lesson, chooseLesson, sql, editSql, setSql, error, run, options, changeOptions, sim, scene, playback,
     inspected: (lesson.kind === "lab" && lesson.concept) || pinned || scene.active || (scene.status === "done" ? "row" : "client") as ConceptId,
     pinned, select: setPinned, settings, setSettings,
-    reduceMotion: settings.motion === "reduce" || systemReduced,
+    reduceMotion, hnsw,
     view, setView: setChosenView, webgl, cameraReset, resetCamera: () => setCameraReset((n) => n + 1),
   };
 }

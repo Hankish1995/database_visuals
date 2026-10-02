@@ -6,6 +6,7 @@ import { FlowDiagram } from "@/components/diagram/FlowDiagram";
 import { FocusBanner } from "@/components/stage/FocusBanner";
 import { LabStage } from "@/components/labs/LabStage";
 import { LABS } from "@/content/labs";
+import { HnswStage } from "@/components/vector/HnswStage";
 import { Narration } from "@/components/stage/Narration";
 import { SceneErrorBoundary } from "@/components/stage/SceneErrorBoundary";
 import { StageHeader } from "@/components/stage/StageHeader";
@@ -25,7 +26,9 @@ export function StagePanel({ ws, className = "" }: { ws: Workspace; className?: 
   return (
     <section aria-labelledby="stage-title" className={`flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card ${className}`}>
       <StageHeader ws={ws} can3d={ws.webgl !== false && !sceneFailed} />
-      {ws.lesson.kind === "lab" && ws.lesson.lab ? (
+      {ws.lesson.kind === "vector" ? (
+        <HnswStage demo={ws.hnsw} />
+      ) : ws.lesson.kind === "lab" && ws.lesson.lab ? (
         <LabStage key={ws.lesson.id} lab={LABS[ws.lesson.lab]} reduceMotion={ws.reduceMotion} />
       ) : (
         <>

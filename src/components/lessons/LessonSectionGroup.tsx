@@ -1,4 +1,4 @@
-import { ChevronRight, CirclePlay, Crosshair, FlaskConical } from "lucide-react";
+import { ChevronRight, CirclePlay, Crosshair, FlaskConical, Waypoints } from "lucide-react";
 import type { Lesson, LessonSection } from "@/content/lessons";
 
 interface Props {
@@ -9,8 +9,8 @@ interface Props {
   onChoose: (id: string) => void;
 }
 
-const KIND_ICON = { ready: CirclePlay, focus: Crosshair, lab: FlaskConical };
-const KIND_NOTE = { ready: "", focus: "Focused view", lab: "Hands-on lab" };
+const KIND_ICON = { ready: CirclePlay, focus: Crosshair, lab: FlaskConical, vector: Waypoints };
+const KIND_NOTE = { ready: "", focus: "Focused view", lab: "Hands-on lab", vector: "Interactive simulation" };
 
 export function LessonSectionGroup({ section, current, expanded, onToggle, onChoose }: Props) {
   const listId = `lessons-${section.id}`;
